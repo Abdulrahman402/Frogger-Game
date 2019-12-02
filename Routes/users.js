@@ -9,8 +9,13 @@ const sgMail = require("@sendgrid/mail");
 const keys = require("../Config/keys");
 sgMail.setApiKey(keys.sgAPIKey);
 
-router.get("/", auth, verefied, async (req, res) => {
+router.get("/", async (req, res) => {
   const user = await User.find();
+  res.send(user);
+});
+
+router.get("/me", auth, verefied, async (req, res) => {
+  const user = await User.findOne({ _id: req.user._id }).select("-password");
   res.send(user);
 });
 
@@ -40,8 +45,7 @@ router.post("/sendMail", auth, async (req, res) => {
     to: user.email,
     from: "abduwemoh@gmail.com",
     subject: "Validation Email",
-    text:
-      "click link below to verify your account http://localhost:1000/api/users/verify"
+    text: "click link below to verify your account "
   });
   res.send("Mail sent");
 });
@@ -90,22 +94,13 @@ router.put("/password", auth, async (req, res) => {
   res.send("Password changed successfully");
 });
 
-router.get("/score", auth, verefied, async (req, res) => {
-  const user = await User.findOne(req.user._id);
-  res.send(user.currScore);
-});
-
-router.get("/highScore", auth, verefied, async (req, res) => {
-  const user = await User.findOne(req.user._id);
-  res.send(user.highestScore);
-});
-
 router.put("/updateScore", auth, verefied, async (req, res) => {
   const user = await User.findByIdAndUpdate(req.user._id);
 
   if (user.currScore > user.highestScore) {
     user.highestScore = user.currScore;
   }
+  await user.save();
   res.send(user.highestScore);
 });
 
